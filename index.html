@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quick Quiz Game</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section id="signup-screen" class="card">
+        <h1>Sign Up</h1>
+        <p>Create your profile to start playing.</p>
+        <form id="signup-form">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" required placeholder="Your name" />
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@example.com" />
+          <button type="submit">Sign Up</button>
+        </form>
+      </section>
+
+      <section id="home-screen" class="card hidden">
+        <h1>Welcome, <span id="player-name"></span>!</h1>
+        <p>Ready for a 30-second challenge?</p>
+        <button id="play-btn">Play game</button>
+      </section>
+
+      <section id="game-screen" class="card hidden">
+        <div class="top-bar">
+          <h1>Quiz Game</h1>
+          <div class="timer">Time left: <span id="time-left">30</span>s</div>
+        </div>
+        <p id="question-counter"></p>
+        <h2 id="question-text"></h2>
+        <form id="answer-form">
+          <label for="answer-input">Your answer</label>
+          <input id="answer-input" name="answer" type="text" required autocomplete="off" />
+          <button type="submit">Submit</button>
+        </form>
+      </section>
+
+      <section id="result-screen" class="card hidden">
+        <h1 id="result-title"></h1>
+        <p id="result-message"></p>
+        <h2>Your Answers</h2>
+        <ol id="answers-list"></ol>
+        <button id="play-again-btn">Play Again</button>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
