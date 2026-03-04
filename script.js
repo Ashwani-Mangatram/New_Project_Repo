@@ -7,7 +7,6 @@ const signupForm = document.getElementById("signup-form");
 const playBtn = document.getElementById("play-btn");
 const answerForm = document.getElementById("answer-form");
 const playAgainBtn = document.getElementById("play-again-btn");
-const nextSetBtn = document.getElementById("next-set-btn");
 
 const playerName = document.getElementById("player-name");
 const bestScore = document.getElementById("best-score");
@@ -22,41 +21,42 @@ const scoreSummary = document.getElementById("score-summary");
 const answersList = document.getElementById("answers-list");
 const leaderboardList = document.getElementById("leaderboard-list");
 
+const TOTAL_SET_TIME = 30;
+
 const questionSets = [
   [
-    { prompt: "What is 5 + 7?", answers: ["12", "twelve"] },
-    { prompt: "Name the capital city of France.", answers: ["paris"] },
-    { prompt: "What color do you get when you mix red and white?", answers: ["pink"] }
+    { prompt: "A train travels 120 km in 2 hours. What is its average speed in km/h?", answers: ["60", "60 km/h", "60km/h"] },
+    { prompt: "Which organ in the human body is primarily responsible for filtering blood?", answers: ["kidney", "kidneys"] },
+    { prompt: "What is the square root of 225?", answers: ["15", "fifteen"] }
   ],
   [
-    { prompt: "What is 9 - 4?", answers: ["5", "five"] },
-    { prompt: "Which planet is called the Red Planet?", answers: ["mars"] },
-    { prompt: "How many days are there in a week?", answers: ["7", "seven"] }
+    { prompt: "In which year did World War II end?", answers: ["1945"] },
+    { prompt: "What is the chemical symbol for sodium?", answers: ["na"] },
+    { prompt: "If 3x + 5 = 20, what is x?", answers: ["5", "five"] }
   ],
   [
-    { prompt: "What is 6 x 3?", answers: ["18", "eighteen"] },
-    { prompt: "What is the largest ocean on Earth?", answers: ["pacific", "pacific ocean"] },
-    { prompt: "Which gas do plants absorb from air?", answers: ["carbon dioxide", "co2"] }
+    { prompt: "Which layer of Earth lies between the crust and the core?", answers: ["mantle", "the mantle"] },
+    { prompt: "Who wrote the play 'Julius Caesar'?", answers: ["william shakespeare", "shakespeare"] },
+    { prompt: "What is 18% of 250?", answers: ["45", "forty five", "forty-five"] }
   ],
   [
-    { prompt: "What is 15 / 3?", answers: ["5", "five"] },
-    { prompt: "Which country has city Tokyo?", answers: ["japan"] },
-    { prompt: "How many letters are there in English alphabet?", answers: ["26", "twenty six", "twenty-six"] }
+    { prompt: "Which country is known as the Land of the Rising Sun?", answers: ["japan"] },
+    { prompt: "What is the value of pi rounded to two decimal places?", answers: ["3.14"] },
+    { prompt: "Which gas is most abundant in Earth's atmosphere?", answers: ["nitrogen"] }
   ],
   [
-    { prompt: "What is 11 + 13?", answers: ["24", "twenty four", "twenty-four"] },
-    { prompt: "Which is the fastest land animal?", answers: ["cheetah"] },
-    { prompt: "Water freezes at what temperature in Celsius?", answers: ["0", "zero"] }
+    { prompt: "Who developed the theory of relativity?", answers: ["albert einstein", "einstein"] },
+    { prompt: "What is the largest prime number less than 20?", answers: ["19", "nineteen"] },
+    { prompt: "What does CPU stand for in computers?", answers: ["central processing unit"] }
   ]
 ];
 
-let activeSetIndex = 0;
 let currentQuestionIndex = 0;
-let remainingTime = 30;
+let currentSetIndex = null;
+let remainingTime = TOTAL_SET_TIME;
 let timerInterval = null;
 let answers = [];
 let currentPlayer = "Player";
-let totalScore = 0;
 
 function showScreen(screenElement) {
   [signupScreen, homeScreen, gameScreen, resultScreen].forEach((screen) => {
@@ -78,8 +78,29 @@ function setPlayerBest(name, score) {
   localStorage.setItem(`best-score:${name}`, String(score));
 }
 
-function updateHomeSummary() {
-  bestScore.textContent = `Your best score: ${getPlayerBest(currentPlayer)}/${questionSets.length * 3}`;
+function getUsedSetIndexes() {
+  const raw = localStorage.getItem("used-set-indexes");
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUsedSetIndexes(indexes) {
+  localStorage.setItem("used-set-indexes", JSON.stringify(indexes));
+}
+
+function getAvailableSetIndexes() {
+  const used = getUsedSetIndexes();
+  return questionSets
+    .map((_, index) => index)
+    .filter((index) => !used.includes(index));
 }
 
 function getLeaderboard() {
@@ -100,17 +121,17 @@ function saveLeaderboard(board) {
   localStorage.setItem("leaderboard", JSON.stringify(board));
 }
 
-function updateLeaderboard(name, score) {
+function updateLeaderboard(name, score, timeTaken) {
   const board = getLeaderboard();
-  const existing = board.find((entry) => entry.name === name);
+  board.push({ name, score, timeTaken });
 
-  if (existing) {
-    existing.score = Math.max(existing.score, score);
-  } else {
-    board.push({ name, score });
-  }
+  board.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    return a.timeTaken - b.timeTaken;
+  });
 
-  board.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
   saveLeaderboard(board.slice(0, 10));
 }
 
@@ -127,21 +148,51 @@ function renderLeaderboard() {
 
   board.forEach((entry) => {
     const item = document.createElement("li");
-    item.textContent = `${entry.name} — ${entry.score}/${questionSets.length * 3}`;
+    item.textContent = `${entry.name} — Score ${entry.score}/3, Time ${entry.timeTaken}s`;
     leaderboardList.appendChild(item);
   });
 }
 
-function getCurrentSet() {
-  return questionSets[activeSetIndex];
+function updateHomeSummary() {
+  const available = getAvailableSetIndexes().length;
+  bestScore.textContent = `Your best score: ${getPlayerBest(currentPlayer)}/3 | Remaining sets: ${available}`;
+
+  if (available === 0) {
+    playBtn.disabled = true;
+    playBtn.textContent = "No sets left";
+  } else {
+    playBtn.disabled = false;
+    playBtn.textContent = "Play game";
+  }
 }
 
-function startSet() {
+function getCurrentSet() {
+  return questionSets[currentSetIndex];
+}
+
+function pickNewSetForUser() {
+  const available = getAvailableSetIndexes();
+  if (available.length === 0) {
+    return null;
+  }
+
+  return available[0];
+}
+
+function startGame() {
+  const chosenSet = pickNewSetForUser();
+  if (chosenSet === null) {
+    alert("All question sets are already completed by users. No new set is available.");
+    updateHomeSummary();
+    return;
+  }
+
+  currentSetIndex = chosenSet;
   currentQuestionIndex = 0;
-  remainingTime = 30;
+  remainingTime = TOTAL_SET_TIME;
   answers = [];
 
-  setTitle.textContent = `Set ${activeSetIndex + 1} of ${questionSets.length}`;
+  setTitle.textContent = `Moderate Set ${currentSetIndex + 1}`;
   timeLeft.textContent = remainingTime;
 
   if (timerInterval) {
@@ -153,7 +204,7 @@ function startSet() {
     timeLeft.textContent = remainingTime;
 
     if (remainingTime <= 0) {
-      endSet(true);
+      endGame(true);
     }
   }, 1000);
 
@@ -173,31 +224,42 @@ function isCorrect(question, answer) {
   return question.answers.includes(normalize(answer));
 }
 
-function calculateSetScore() {
+function calculateScore() {
   return getCurrentSet().reduce((score, question, index) => {
     return score + (isCorrect(question, answers[index] || "") ? 1 : 0);
   }, 0);
 }
 
-function endSet(timeUp = false) {
+function markCurrentSetAsUsed() {
+  const used = getUsedSetIndexes();
+  if (!used.includes(currentSetIndex)) {
+    used.push(currentSetIndex);
+    saveUsedSetIndexes(used);
+  }
+}
+
+function endGame(timeUp = false) {
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
 
   const setQuestions = getCurrentSet();
-  const setScore = calculateSetScore();
-  totalScore += setScore;
+  const score = calculateScore();
+  const timeTaken = TOTAL_SET_TIME - remainingTime;
 
-  resultTitle.textContent = timeUp
-    ? `Set ${activeSetIndex + 1} ended (Time up)`
-    : `Set ${activeSetIndex + 1} completed`;
+  markCurrentSetAsUsed();
+  updateLeaderboard(currentPlayer, score, timeTaken);
+  renderLeaderboard();
 
-  resultMessage.textContent = timeUp
-    ? "30 seconds completed. This set ended automatically."
-    : "You submitted all answers for this set.";
+  const best = getPlayerBest(currentPlayer);
+  if (score > best) {
+    setPlayerBest(currentPlayer, score);
+  }
 
-  scoreSummary.textContent = `Set score: ${setScore}/${setQuestions.length} | Total score: ${totalScore}/${questionSets.length * 3}`;
+  resultTitle.textContent = timeUp ? "Set ended (Time up)" : "Set completed";
+  resultMessage.textContent = "Please sign up again for another user to get a different set.";
+  scoreSummary.textContent = `Score: ${score}/${setQuestions.length} | Time taken: ${timeTaken}s`;
 
   answersList.innerHTML = "";
   setQuestions.forEach((question, index) => {
@@ -209,30 +271,7 @@ function endSet(timeUp = false) {
     answersList.appendChild(item);
   });
 
-  updateLeaderboard(currentPlayer, totalScore);
-  renderLeaderboard();
-
-  if (activeSetIndex < questionSets.length - 1) {
-    nextSetBtn.classList.remove("hidden");
-    playAgainBtn.classList.add("hidden");
-  } else {
-    nextSetBtn.classList.add("hidden");
-    playAgainBtn.classList.remove("hidden");
-
-    const best = getPlayerBest(currentPlayer);
-    if (totalScore > best) {
-      setPlayerBest(currentPlayer, totalScore);
-    }
-    updateHomeSummary();
-  }
-
   showScreen(resultScreen);
-}
-
-function startGame() {
-  totalScore = 0;
-  activeSetIndex = 0;
-  startSet();
 }
 
 signupForm.addEventListener("submit", (event) => {
@@ -261,17 +300,14 @@ answerForm.addEventListener("submit", (event) => {
   currentQuestionIndex += 1;
 
   if (currentQuestionIndex >= getCurrentSet().length) {
-    endSet(false);
+    endGame(false);
   } else {
     renderQuestion();
   }
 });
 
-nextSetBtn.addEventListener("click", () => {
-  activeSetIndex += 1;
-  startSet();
-});
-
 playAgainBtn.addEventListener("click", () => {
-  showScreen(homeScreen);
+  signupForm.reset();
+  currentPlayer = "Player";
+  showScreen(signupScreen);
 });
