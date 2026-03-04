@@ -4,61 +4,68 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quick Quiz Game</title>
-    <link rel="stylesheet" href="styles.css?v=20260304c" />
+    <link rel="stylesheet" href="styles.css?v=20260304d" />
   </head>
   <body>
-    <main class="app">
-      <section id="signup-screen" class="card">
-        <h1>Sign Up</h1>
-        <p>Create your profile to start playing.</p>
-        <form id="signup-form">
-          <label for="name">Name</label>
-          <input id="name" name="name" type="text" required placeholder="Your name" />
-          <label for="email">Email</label>
-          <input id="email" name="email" type="email" required placeholder="you@example.com" />
-          <button type="submit">Sign Up</button>
-        </form>
-      </section>
+    <div class="layout">
+      <main class="app">
+        <section id="signup-screen" class="card">
+          <h1>Sign Up</h1>
+          <p>Create your profile to start playing.</p>
+          <form id="signup-form">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" required placeholder="Your name" />
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required placeholder="you@example.com" />
+            <button type="submit">Sign Up</button>
+          </form>
+        </section>
 
-      <section id="home-screen" class="card hidden">
-        <h1>Welcome, <span id="player-name"></span>!</h1>
-        <p>Each signup gets 1 moderate set (3 questions, 30 seconds). Completed sets are not repeated.</p>
-        <p id="best-score" class="muted"></p>
-        <button id="play-btn">Play game</button>
-      </section>
+        <section id="home-screen" class="card hidden">
+          <h1>Welcome, <span id="player-name"></span>!</h1>
+          <p>Each signup gets 1 moderate set (3 questions, 30 seconds). Completed sets are not repeated.</p>
+          <p id="best-score" class="muted"></p>
+          <button id="play-btn">Play game</button>
+        </section>
 
-      <section id="game-screen" class="card hidden">
-        <div class="top-bar">
-          <h1 id="set-title">Quiz Game</h1>
-          <div class="timer">Time left: <span id="time-left">30</span>s</div>
-        </div>
-        <p id="question-counter"></p>
-        <h2 id="question-text"></h2>
-        <form id="answer-form">
-          <label for="answer-input">Your answer</label>
-          <input id="answer-input" name="answer" type="text" required autocomplete="off" />
-          <button type="submit">Submit</button>
-        </form>
-      </section>
+        <section id="game-screen" class="card hidden">
+          <div class="top-bar">
+            <h1 id="set-title">Quiz Game</h1>
+            <div class="timer">Time left: <span id="time-left">30</span>s</div>
+          </div>
+          <p id="question-counter"></p>
+          <h2 id="question-text"></h2>
+          <form id="answer-form">
+            <label for="answer-input">Your answer</label>
+            <input id="answer-input" name="answer" type="text" required autocomplete="off" />
+            <button type="submit">Submit</button>
+          </form>
+        </section>
 
-      <section id="result-screen" class="card hidden">
-        <h1 id="result-title"></h1>
-        <p id="result-message"></p>
-        <p id="score-summary" class="score"></p>
+        <section id="result-screen" class="card hidden">
+          <h1 id="result-title"></h1>
+          <p id="result-message"></p>
+          <p id="score-summary" class="score"></p>
 
-        <h2>Set Answers</h2>
-        <ol id="answers-list"></ol>
+          <h2>Set Answers</h2>
+          <ol id="answers-list"></ol>
 
-        <h2>Leaderboard</h2>
-        <ol id="leaderboard-list"></ol>
+          <h2>Leaderboard</h2>
+          <ol id="leaderboard-list"></ol>
 
-        <div class="actions">
-          <button id="next-set-btn" class="hidden" type="button">Next Set</button>
-          <button id="play-again-btn" type="button">Sign Up Again</button>
-        </div>
-      </section>
-    </main>
+          <div class="actions">
+            <button id="next-set-btn" class="hidden" type="button">Next Set</button>
+            <button id="play-again-btn" type="button">Sign Up Again</button>
+          </div>
+        </section>
+      </main>
 
-    <script src="script.js?v=20260304c" defer></script>
+      <aside class="card leaderboard-panel">
+        <h2>Top 10 Leaderboard</h2>
+        <ol id="global-leaderboard-list"></ol>
+      </aside>
+    </div>
+
+    <script src="script.js?v=20260304d" defer></script>
   </body>
 </html>

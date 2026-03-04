@@ -20,6 +20,7 @@ const resultMessage = document.getElementById("result-message");
 const scoreSummary = document.getElementById("score-summary");
 const answersList = document.getElementById("answers-list");
 const leaderboardList = document.getElementById("leaderboard-list");
+const globalLeaderboardList = document.getElementById("global-leaderboard-list");
 
 const TOTAL_SET_TIME = 30;
 
@@ -137,19 +138,24 @@ function updateLeaderboard(name, score, timeTaken) {
 
 function renderLeaderboard() {
   const board = getLeaderboard();
-  leaderboardList.innerHTML = "";
+  const lists = [leaderboardList, globalLeaderboardList].filter(Boolean);
 
-  if (board.length === 0) {
-    const item = document.createElement("li");
-    item.textContent = "No scores yet.";
-    leaderboardList.appendChild(item);
-    return;
-  }
+  lists.forEach((targetList) => {
+    targetList.innerHTML = "";
 
-  board.forEach((entry) => {
-    const item = document.createElement("li");
-    item.textContent = `${entry.name} — Score ${entry.score}/3, Time ${entry.timeTaken}s`;
-    leaderboardList.appendChild(item);
+    for (let i = 0; i < 10; i += 1) {
+      const item = document.createElement("li");
+      const entry = board[i];
+
+      if (entry) {
+        item.textContent = `${entry.name} — Score ${entry.score}/3, Time ${entry.timeTaken}s`;
+      } else {
+        item.textContent = `User ${i + 1} — No result yet`;
+        item.classList.add("placeholder");
+      }
+
+      targetList.appendChild(item);
+    }
   });
 }
 
@@ -311,3 +317,7 @@ playAgainBtn.addEventListener("click", () => {
   currentPlayer = "Player";
   showScreen(signupScreen);
 });
+
+
+renderLeaderboard();
+updateHomeSummary();
