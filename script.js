@@ -9,30 +9,60 @@ const answerForm = document.getElementById("answer-form");
 const playAgainBtn = document.getElementById("play-again-btn");
 
 const playerName = document.getElementById("player-name");
+const bestScore = document.getElementById("best-score");
 const questionCounter = document.getElementById("question-counter");
 const questionText = document.getElementById("question-text");
 const answerInput = document.getElementById("answer-input");
 const timeLeft = document.getElementById("time-left");
 const resultTitle = document.getElementById("result-title");
 const resultMessage = document.getElementById("result-message");
+const scoreSummary = document.getElementById("score-summary");
 const answersList = document.getElementById("answers-list");
 
 const questions = [
-  "What is 5 + 7?",
-  "Name the capital city of France.",
-  "What color do you get when you mix red and white?"
+  {
+    prompt: "What is 5 + 7?",
+    answers: ["12", "twelve"]
+  },
+  {
+    prompt: "Name the capital city of France.",
+    answers: ["paris"]
+  },
+  {
+    prompt: "What color do you get when you mix red and white?",
+    answers: ["pink"]
+  }
 ];
 
 let currentQuestionIndex = 0;
 let remainingTime = 30;
 let timerInterval = null;
 let answers = [];
+let currentPlayer = "Player";
 
 function showScreen(screenElement) {
   [signupScreen, homeScreen, gameScreen, resultScreen].forEach((screen) => {
     screen.classList.add("hidden");
   });
   screenElement.classList.remove("hidden");
+}
+
+function normalize(text) {
+  return text.trim().toLowerCase();
+}
+
+function getBestScore(name) {
+  const stored = localStorage.getItem(`best-score:${name}`);
+  return stored ? Number(stored) : 0;
+}
+
+function setBestScore(name, score) {
+  localStorage.setItem(`best-score:${name}`, String(score));
+}
+
+function updateHomeSummary() {
+  const highest = getBestScore(currentPlayer);
+  bestScore.textContent = `Your best score: ${highest}/${questions.length}`;
 }
 
 function startGame() {
@@ -60,15 +90,33 @@ function startGame() {
 
 function renderQuestion() {
   questionCounter.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
-  questionText.textContent = questions[currentQuestionIndex];
+  questionText.textContent = questions[currentQuestionIndex].prompt;
   answerInput.value = "";
   answerInput.focus();
+}
+
+function isCorrect(question, answer) {
+  const cleaned = normalize(answer);
+  return question.answers.includes(cleaned);
+}
+
+function calculateScore() {
+  return questions.reduce((score, question, index) => {
+    const answer = answers[index] || "";
+    return score + (isCorrect(question, answer) ? 1 : 0);
+  }, 0);
 }
 
 function endGame(timeUp = false) {
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
+  }
+
+  const score = calculateScore();
+  const previousBest = getBestScore(currentPlayer);
+  if (score > previousBest) {
+    setBestScore(currentPlayer, score);
   }
 
   if (timeUp) {
@@ -79,14 +127,20 @@ function endGame(timeUp = false) {
     resultMessage.textContent = "You answered all 3 questions in time.";
   }
 
+  scoreSummary.textContent = `Score: ${score}/${questions.length}`;
+
   answersList.innerHTML = "";
   questions.forEach((question, index) => {
     const listItem = document.createElement("li");
     const userAnswer = answers[index] ? answers[index] : "No answer";
-    listItem.textContent = `${question} — ${userAnswer}`;
+    const correctLabel = isCorrect(question, userAnswer)
+      ? "✅ Correct"
+      : `❌ Correct answer: ${question.answers[0]}`;
+    listItem.textContent = `${question.prompt} — Your answer: ${userAnswer}. ${correctLabel}`;
     answersList.appendChild(listItem);
   });
 
+  updateHomeSummary();
   showScreen(resultScreen);
 }
 
@@ -95,7 +149,9 @@ signupForm.addEventListener("submit", (event) => {
   const formData = new FormData(signupForm);
   const name = formData.get("name").toString().trim();
 
-  playerName.textContent = name || "Player";
+  currentPlayer = name || "Player";
+  playerName.textContent = currentPlayer;
+  updateHomeSummary();
   showScreen(homeScreen);
 });
 

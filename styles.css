@@ -80,3 +80,12 @@ button:hover {
   font-weight: 700;
   color: #b91c1c;
 }
+
+.muted {
+  color: #475569;
+}
+
+.score {
+  font-weight: 700;
+  color: #1d4ed8;
+}
